@@ -1,0 +1,17 @@
+import mne
+from mne.datasets import eegbci
+
+def load_and_filter(subject, run):
+    # Load PhysioNet data
+    files = eegbci.load_data(subject, [run])
+    raw = mne.io.read_raw_edf(files[0], preload=True, verbose=False)
+    eegbci.standardize(raw)
+    
+    # Filtering: 8-30Hz (Mandatory for Motor Imagery)
+    raw.filter(8., 30., fir_design='firwin', verbose=False)
+    
+    # Extract Events and Epochs
+    events, event_id = mne.events_from_annotations(raw, dict(T1=1, T2=2), verbose=False)
+    epochs = mne.Epochs(raw, events, event_id, tmin=-0.5, tmax=4.0, 
+                        picks='eeg', baseline=None, preload=True, verbose=False)
+    return epochs, raw
